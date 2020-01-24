@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "runtime.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -12,12 +11,13 @@
 #include <iostream>
 #include <thread>
 #include <future>
+#include <cassert>
 
 SafeEnv::SafeEnv(const std::string& sharename, bool safe, int timeout_secs)
  : m_safe_env(safe), m_share_name(sharename), m_timeout(timeout_secs)
 {
 	if (!safe) {
-		ASSERT(timeout_secs <= 0);
+		assert(timeout_secs <= 0);
 	}
 }
 
@@ -37,7 +37,6 @@ SafeEnv::operator()(const std::function<void()>& safe)
 	int shm_fd = shm_open(m_share_name.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRWXU | S_IRWXG);
 	if (shm_fd < 0) {
 		std::cerr << "Error in shm_open()" << std::endl;
-		ASSERT(false);
 		return Result::Error;
 	}
 
@@ -92,7 +91,6 @@ SafeEnv::operator()(const std::function<void()>& safe)
 	} else {
 		shm_unlink(m_share_name.c_str());
 		std::cerr << "Cannot fork " << pid << std::endl;
-		ASSERT(false);
 		return Result::Error;
 	}
 }
@@ -106,6 +104,8 @@ SafeEnv::result2str(Result r)
 		A(Crash);
 		A(Timeout);
 		A(Error);
-
 	}
+
+#undef A
+	return "";
 }
