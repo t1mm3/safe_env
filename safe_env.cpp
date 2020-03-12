@@ -71,6 +71,7 @@ SafeEnv::operator()(const std::function<void()>& safe)
 			auto future = std::async(std::launch::async, &wait, &status);
 			if (future.wait_for(std::chrono::seconds(m_timeout)) == std::future_status::timeout) {
 				kill(pid, SIGKILL);
+				shm_unlink(m_share_name.c_str());
 				return Result::Timeout;
 			}
 		} else {
@@ -79,6 +80,7 @@ SafeEnv::operator()(const std::function<void()>& safe)
 
 		if (shared_memory[0] == kSuccess) {
 			std::cerr << "Child exited with status successfully" << std::endl;
+			shm_unlink(m_share_name.c_str());
 			return Result::Success;
 		}
 
